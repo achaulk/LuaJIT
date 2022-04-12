@@ -340,6 +340,7 @@ enum {
 };
 
 #define uddata(u)	((void *)((u)+1))
+#define invuddata(ud)	((GCudata*)(ud)-1)
 #define sizeudata(u)	(sizeof(struct GCudata)+(u)->len)
 
 /* -- C data object ------------------------------------------------------- */
