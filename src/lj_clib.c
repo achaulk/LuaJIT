@@ -3,7 +3,11 @@
 ** Copyright (C) 2005-2022 Mike Pall. See Copyright Notice in luajit.h
 */
 
+#define LUA_LIB
+
 #include "lj_obj.h"
+
+#include "luajit.h"
 
 #if LJ_HASFFI
 
@@ -17,6 +21,19 @@
 #include "lj_cdata.h"
 #include "lj_clib.h"
 #include "lj_strfmt.h"
+
+static void* (*g_lj_getprocaddr)(const char *name);
+
+LUA_API void luaJIT_setgetprocaddr(void *(*fn)(const char *))
+{
+    g_lj_getprocaddr = fn;
+}
+
+#define TRY_CALL_CUSTOM_GPA(name) \
+  if (g_lj_getprocaddr) { \
+    void *p = g_lj_getprocaddr(name); \
+    if (p) return p; \
+  }
 
 /* -- OS-specific functions ----------------------------------------------- */
 
@@ -139,6 +156,7 @@ static void clib_unloadlib(CLibrary *cl)
 
 static void *clib_getsym(CLibrary *cl, const char *name)
 {
+  TRY_CALL_CUSTOM_GPA(name);
   void *p = dlsym(cl->handle, name);
   return p;
 }
@@ -250,9 +268,13 @@ static void *clib_getsym(CLibrary *cl, const char *name)
       if (!(void *)h) {  /* Resolve default library handles (once). */
 #if LJ_TARGET_UWP
 	h = (HINSTANCE)&__ImageBase;
+
+  TRY_CALL_CUSTOM_GPA(name);
 #else
 	switch (i) {
-	case CLIB_HANDLE_EXE: GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, NULL, &h); break;
+	case CLIB_HANDLE_EXE:
+    TRY_CALL_CUSTOM_GPA(name);
+    GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, NULL, &h); break;
 	case CLIB_HANDLE_DLL:
 	  GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS|GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
 			     (const char *)clib_def_handle, &h);
