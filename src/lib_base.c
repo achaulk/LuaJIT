@@ -694,3 +694,7 @@ LUALIB_API int luaopen_base(lua_State *L)
   return 2;
 }
 
+LUA_API lua_State *luaJIT_getcurrentthread(lua_State *L)
+{
+  return gco2th(gcref(G(L)->cur_L));
+}

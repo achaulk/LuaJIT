@@ -75,6 +75,8 @@ LUA_API const char *luaJIT_profile_dumpstack(lua_State *L, const char *fmt,
 
 LUA_API void luaJIT_setgetprocaddr(void *(*fn)(const char *));
 
+LUA_API lua_State *luaJIT_getcurrentthread(lua_State *L);
+
 /* Enforce (dynamic) linker error for version mismatches. Call from main. */
 LUA_API void LUAJIT_VERSION_SYM(void);
 
